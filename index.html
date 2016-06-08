@@ -5,11 +5,416 @@
     <link rel="stylesheet" type="text/css" href="https://cdn.mxpnl.com/libs/mixpanel-platform/css/reset.css">
     <link rel="stylesheet" type="text/css" href="https://cdn.mxpnl.com/libs/mixpanel-platform/build/mixpanel-platform.v0.latest.min.css">
     <script src="https://cdn.mxpnl.com/libs/mixpanel-platform/build/mixpanel-platform.v0.latest.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js" charset="utf-8"></script>
+    <style type="text/css">
+
+      form {
+        padding:10px 0 0 0;
+      }
+    	
+    	.module-container {
+    		padding:10px;
+    		width:945px;
+    		display: -webkit-flex;
+    		display: flex;
+    		-webkit-align-items: center;
+    		align-items: center;
+    		-webkit-justify-content: center;
+    		justify-content: center;
+    		-webkit-flex-flow: row wrap;
+    		flex-flow: row wrap;
+    		-webkit-align-content: stretch;
+    		align-content: stretch;
+    	}
+
+      .modal {
+        display: none;
+        z-index:100;
+        background-color: white;
+        position: fixed;
+        padding: 20px;
+        left: 341px;
+        top: 125px;
+        width: 280px;
+        margin: auto;
+      }
+
+      #overlay {
+        background-color: #3c4c63;
+        height: 100%;
+        left: 0;
+        opacity: .8;
+        position: fixed;
+        top: 0;
+        width: 100%;
+        z-index: 10;
+        display:none;
+      }
+
+      .module {
+        background-color:#f7f7f7;
+        box-shadow: 0 0 1px rgba(0,0,0,.14),0 2px 2px rgba(0,0,0,.28);
+        height:250px;
+        margin:10px;
+        padding:5px;  
+      }
+
+      .module .legend {
+        text-transform: uppercase;
+        font-weight:800;
+        position: relative;
+        top: 50%;
+        transform: translateY(-50%);
+        margin:auto;
+      }
+
+    	.small {
+    		-webkit-flex: 0 0 283px;
+    		flex: 0 0 283px;
+    	}
+
+      .medium {
+          -webkit-flex: 0 0 598px;
+          flex: 0 0 598px;
+      }
+
+    	.large {
+        height:440px;
+    		-webkit-flex: 0 0 914px;
+    		flex: 0 0 914px;
+    	}
+
+      .large .mixpanel-platform-output {
+        bottom:110px;
+      }
+
+      .label {
+        margin:5px 0 5px 0;
+      }
+
+    	.legend {
+        color: #039be5;
+        width:260px;
+    		padding-top:2px;
+    		text-align:center;
+    	}
+
+      .add {
+        height:30px;
+        -webkit-flex: 0 0 240px;
+        flex: 0 0 240px;
+        order:1;
+      }
+
+      .black {
+        color:black;
+      }
+
+      .eventDropdown {
+      }
+
+      .fuelGauge {
+        font-size:18px;
+        font-weight:bold;
+        text-align: center;
+        position: relative;
+        bottom: 10px;
+        left: 10px;
+        top: 12px;
+      }
+
+      .fuelGauge .legend {
+        top:22px;
+      }
+
+      .button {
+        margin: 5px 0 5px;
+        height:30px;
+        -webkit-flex: 0 0 130px;
+        flex: 0 0 130px;
+        border-radius: 3px;
+        background-color: white;
+        cursor: pointer;
+      }
+
+      #submit {
+        background-color:#dee3ec;
+        line-height: 20px;
+        height:20px;
+        text-align: center;
+        border:1px gray solid;
+      }
+
+      #submit .legend {
+        color:white !important;
+      }
+    </style>
   </head>
+
   <body class="mixpanel-platform-body">
-    <h1>Hello, World!</h1>
-    <script>
-      // Run queries and display results here
+    <div id="overlay"></div>
+
+    <div class="module-container">
+      
+      <!-- <div class="gauge1 small module">
+        <div class="legend container">
+          <p class="label black">Select an event:</p>
+          <div class="eventDropdown"></div>
+          <div class="gauge1Button button module" onclick="gaugeQuery(1)">
+            <div class="legend">Run</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="gauge2 small module">
+        <div class="legend container">
+          <p class="label black">Select an event:</p>
+          <div class="eventDropdown"></div>
+          <div class="gauge2Button button module" onclick="gaugeQuery(2)">
+            <div class="legend">Run</div>
+          </div>
+        </div>
+      </div> -->
+
+      <div id="add-module" class="add module button"><div class='legend'>Add a module</div></div>
+
+      <!-- HTML for modal. Hidden until someone adds a module. -->
+      <div class="modal">
+        <span class="label">Please select a module:</span>
+        <form id="form" action="">
+          <input type="radio" name="Segmentation" value="segmentation"> Segmentation<br>
+          <input type="radio" name="Fuel Gauge" value="gauge"> Fuel Gauge<br>
+          <input type="radio" name="Top Values" value="top"> Top Values <br><br>
+        </form>
+        <div id="submit" class="module button" name="Submit"><div class="legend">Submit</div></div>
+      </div>
+          
+      </div>
+	
+    </div>
+
+    <script type="text/javascript">
+      var data = {
+        'segment1': {
+              '2010-09-01': 10,
+              '2010-09-02': 11,
+              '2010-09-03': 8
+          },
+          'segment2': {
+              '2010-09-01': 1,
+              '2010-09-02': 18,
+              '2010-09-03': 17
+          },
+          'segment3': {
+              '2010-09-01': 32,
+              '2010-09-02': 37,
+              '2010-09-03': 30
+          }
+      };
+      
+      var num=1;
+      var modal = "<div class='modal'></div>";
+
+      // Make query for segmentation module
+      var segmentationQuery = function(num){
+        console.log("Running segmentationQuery("+num+")");
+        var parentElementClass = ".segmentation"+num;
+
+        // Use highcharts to bring in visualization
+        var lineChart = $('<div></div>').appendTo(parentElementClass).MPChart({chartType: 'line', highchartsOptions: {
+          tooltip: {
+            backgroundColor: '#fffce7'  // Make tooltip background yellow
+          }
+        }});                                // Create a line chart
+        lineChart.MPChart('setData', data); // Set the chart's data
+      };
+
+      var topQuery = function(num){
+        console.log("Running topQuery("+num+")");
+        var parentElementClass = ".top"+num;
+        $(parentElementClass).find(".container").toggle();
+
+        // Use highcharts to bring in visualization
+        var table = $('<div></div>').appendTo(parentElementClass).MPTable({
+          showPercentages: 'true',
+          data: data,
+        });
+      };
+
+      // Make query for fuel gauge module
+      var gaugeQuery = function(num){
+        console.log("Running gaugeQuery("+num+")");
+        var parentElementClass = ".gauge"+num;
+        $(parentElementClass).find(".container").toggle();
+        
+        drawGauge(parentElementClass);
+      };
+
+      // Add modules. Pass a container and the size of the module.
+      var addModule = function(container,type){
+        // Nasty ternary operator to determine size based on type of module
+        var size = type == "segmentation" ? "large" : (type == "top" ? "medium" : "small");
+
+        // Based on module type, append appropriate HTML string.
+        if (type == "segmentation") {
+          module = "<div class='"+type+num+" "+size+" module'><div class='legend container'><p class='label black'>Select an event:</p><div class='eventDropdown'></div><div class='"+type+num+"Button button module' onclick='segmentationQuery("+num+")'><div class='legend'>Run</div></div></div></div>";
+        } else if (type == "top" ) {
+          module = "<div class='"+type+num+" "+size+" module'><div class='legend container'><p class='label black'>Select an event:</p><div class='eventDropdown'></div><div class='"+type+num+"Button button module' onclick='topQuery("+num+")'><div class='legend'>Run</div></div></div></div>";
+        } else {
+          module = "<div class='"+type+num+" "+size+" module'><div class='legend container'><p class='label black'>Select an event:</p><div class='eventDropdown'></div><div class='"+type+num+"Button button module' onclick='gaugeQuery("+num+")'><div class='legend'>Run</div></div></div></div>";
+        };
+
+        // Append HTML to container.
+        container.append(module);
+        $(".eventDropdown").MPEventSelect();
+
+        num++;
+      };
+
+      // When user clicks "Add Module," add grey overlay and trigger the module selection modal.
+      $("#add-module").click(function(){
+        $("#overlay").toggle();
+        $(".modal").toggle();
+      });
+
+      // Handle closing of the overlay on click
+      $("#overlay").click(function(){
+        if ($(this).css("display") == "none") {
+          // Do nothing
+        } else {
+          $(".modal").css("display","none");
+          $(this).toggle();
+          $(this).checked = false;
+        }
+      });
+
+      // Add a module and alert the user if they submit without a selected value
+      $("#submit").click(function(){
+        if ($("input[type='radio']:checked").length > 0){
+          val = $("input[type='radio']:checked").val();
+          addModule($(".module-container"),val);
+
+          // Close modal and overlay after submit and also clear selections
+          $(".modal").css("display","none");
+          $("#overlay").toggle();
+          $("input[type='radio']:checked").prop("checked",false);
+        }
+        else{
+         alert("Please select a module.");
+        }
+      });
+
+      // Check one radio button at a time
+      $(document).ready(function () {
+        $("input[type=radio]").change(function() {
+          // When any radio button on the page is selected,
+          // then deselect all other radio buttons.
+          $("input[type=radio]:checked").not(this).prop("checked", false);
+        });
+      })
+
+      // MPPlatform + JQL Queries
+      $(document).ready(function() {
+
+        // Populate various Platform visualizations and components
+        $(".eventDropdown").MPEventSelect();
+      });
+
+      // Make drawing the radial gauge a function.
+      var drawGauge = function(parentElementClass){
+        var colors = {
+            'pink': '#E1499A',
+            'yellow': '#f0ff08',
+            'green': '#47e495'
+        };
+
+        var color = colors.green;
+
+        var radius = 100;
+        var border = 20;
+        var padding = 30;
+        var startPercent = 0;
+        var endPercent = 0.85;
+
+
+        var twoPi = Math.PI * 2;
+        var formatPercent = d3.format('.0%');
+        var boxSize = (radius + padding) * 2;
+
+
+        var count = Math.abs((endPercent - startPercent) / 0.01);
+        var step = endPercent < startPercent ? -0.01 : 0.01;
+
+        var arc = d3.svg.arc()
+            .startAngle(0)
+            .innerRadius(radius)
+            .outerRadius(radius - border);
+
+        var parent = d3.select(parentElementClass);
+
+        var svg = parent.append('svg')
+            .attr('class',"fuelGauge")
+            .attr('width', boxSize)
+            .attr('height', boxSize);
+
+        var defs = svg.append('defs');
+
+        var filter = defs.append('filter')
+            // .attr('id', 'blur');
+
+        // filter.append('feGaussianBlur')
+        //     .attr('in', 'SourceGraphic')
+        //     .attr('stdDeviation', '7');
+
+        var g = svg.append('g')
+            .attr('transform', 'translate(' + boxSize / 2 + ',' + boxSize / 2 + ')');
+
+        var meter = g.append('g')
+            .attr('class', 'progress-meter');
+
+        meter.append('path')
+            .attr('class', 'background')
+            .attr('fill', '#ccc')
+            .attr('fill-opacity', 0.5)
+            .attr('d', arc.endAngle(twoPi));
+
+        var foreground = meter.append('path')
+            .attr('class', 'foreground')
+            .attr('fill', color)
+            .attr('fill-opacity', 1)
+            .attr('stroke', color)
+            .attr('stroke-width', 5)
+            .attr('stroke-opacity', 1)
+            .attr('filter', 'url(#blur)');
+
+        var front = meter.append('path')
+            .attr('class', 'foreground')
+            .attr('fill', color)
+            .attr('fill-opacity', 1);
+
+        var numberText = meter.append('text')
+            .attr('fill', '#000')
+            .attr('text-anchor', 'middle')
+            .attr('dy', '.35em');
+
+        function updateProgress(progress) {
+            foreground.attr('d', arc.endAngle(twoPi * progress));
+            front.attr('d', arc.endAngle(twoPi * progress));
+            numberText.text(formatPercent(progress));
+        }
+
+        var progress = startPercent;
+
+        (function loops() {
+            updateProgress(progress);
+
+            if (count > 0) {
+                count--;
+                progress += step;
+                setTimeout(loops, 10);
+            }
+        })();
+      };
     </script>
   </body>
 </html>
